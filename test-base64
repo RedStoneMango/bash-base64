@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+tmp=/tmp/bash-base64.$$
+touch "$tmp"
+
+cleanup() {
+	rm -f "$tmp"
+}
+
+trap cleanup EXIT
+
+code=0
+for b64 in ./files/*.b64; do
+	plain=${b64%.b64}
+
+	echo -n "test encoding $plain... "
+
+	# test encoding the file
+	if ./base64 < "$plain" > "$tmp" && cmp "$tmp" "$b64"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+	fi
+
+	echo -n "test decoding $b64... "
+
+	# test encoding the file
+	if ./base64 -d < "$b64" > "$tmp" && cmp "$tmp" "$plain"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+	fi
+done
+exit "$code"
