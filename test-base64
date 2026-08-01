@@ -1,36 +1,77 @@
 #!/usr/bin/env bash
 
-tmp=/tmp/bash-base64.$$
-touch "$tmp"
-
-cleanup() {
-	rm -f "$tmp"
-}
-
-trap cleanup EXIT
-
 code=0
 for b64 in ./files/*.b64; do
 	plain=${b64%.b64}
+    nopad=${b64}-nopad
+    url=${b64}-url
+    url_nopad=${b64}-urlnopad
 
-	echo -n "test encoding $plain... "
-
-	# test encoding the file
-	if ./base64 < "$plain" > "$tmp" && cmp "$tmp" "$b64"; then
+	echo -n "test padded encoding for $plain... "
+    if cmp -s <(./base64 "$plain") "$b64"; then
 		echo 'ok!'
 	else
 		echo 'fail!'
 		code=1
-	fi
+    fi
 
-	echo -n "test decoding $b64... "
-
-	# test encoding the file
-	if ./base64 -d < "$b64" > "$tmp" && cmp "$tmp" "$plain"; then
+	echo -n "test padded decoding for $b64... "
+    if cmp -s <(./base64 -d "$b64") "$plain" -s; then
 		echo 'ok!'
 	else
 		echo 'fail!'
 		code=1
-	fi
+    fi
+
+	echo -n "test unpadded encoding for $plain... "
+    if cmp -s <(./base64 -p "$plain") "$nopad"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+	echo -n "test unpadded decoding for $nopad... "
+    if cmp -s <(./base64 -dp "$nopad") "$plain"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+	echo -n "test padded url-encoding for $plain... "
+    if cmp -s <(./base64 -u "$plain") "$url"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+	echo -n "test padded url-decoding for $url... "
+    if cmp -s <(./base64 -du "$url") "$plain"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+	echo -n "test unpadded url-encoding for $plain... "
+    if cmp -s <(./base64 -up "$plain") "$url_nopad"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+	echo -n "test unpadded url-decoding for $url_nopad... "
+    if cmp -s <(./base64 -dup "$url_nopad") "$plain"; then
+		echo 'ok!'
+	else
+		echo 'fail!'
+		code=1
+    fi
+
+    echo
+
 done
 exit "$code"
